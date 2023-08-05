@@ -2,6 +2,7 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import express from "express";
 import fs from "fs";
+const dataRoute = './users.json'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +44,7 @@ app.get(`/users/:userId`, (req, res) => {
     });
 });
 app.patch('/users/:userId', (req, res) => {
+    //TELL NOAH: `.users.json` instead of dataRoute
     fs.readFile(`./users.json`, 'utf8', (err, data) => {
       if (err) throw err;
   
@@ -60,6 +62,50 @@ app.patch('/users/:userId', (req, res) => {
         res.send({state: "DONE"});
       } else {
         res.status(404).send({state: 'User not found'});
+      }
+    });
+  });
+
+  app.put('/users/:userId', (req, res) => {
+    fs.readFile(`./users.json`, 'utf8', (err, data) => {
+      if (err) throw err;
+  
+      const { users } = JSON.parse(data);
+      const userId = parseInt(req.params.userId);
+      const user = users.find((user) => user.id === userId);
+  
+      if (user) {
+        user.name = req.body.name;
+        user.id = req.body.id;
+  
+        fs.writeFile(`./users.json`, JSON.stringify({ users }), (err) => {
+          if (err) throw err;
+        });
+  
+        res.send({ state: "DONE" });
+      } else {
+        res.status(404).send({ state: 'User not found' });
+      }
+    });
+  });
+  
+  app.delete('/users/:userId', (req, res) => {
+    fs.readFile(dataRoute, 'utf8', (err, data) => {
+      if (err) throw err;
+  
+      const { users } = JSON.parse(data);
+      const userId = parseInt(req.params.userId);
+      const user = users.find(user => user.id === userId);
+  
+      if (user) {
+  
+        fs.writeFile(dataRoute, JSON.stringify({ users: users.filter((x) => x !== user) }), (err) => {
+          if (err) throw err;
+        });
+  
+        res.send({ state: "DONE" });
+      } else {
+        res.status(404).send({ state: 'User not found' });
       }
     });
   });

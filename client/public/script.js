@@ -26,6 +26,8 @@ const fetchData = async (url, id, method = "GET", body = {name: ""}) => {
   <form id="form" data-id="${user.id}">
     ${inputHTML(user.name)}
     ${buttonHTML("Save", "PATCH")}
+    ${buttonHTML("Replace", "PUT")}
+    ${buttonHTML("Remove", "DELETE")}
   </form>
 `;
   const main = async _ => {
@@ -43,6 +45,7 @@ const handleClick = async ({ target }) => {
     const userTarget = target.classList.contains('user') ? target : target.closest('.user');
     
     if (userTarget) {
+        //TELL NOAH: querrySelector doesnt work
     const userId = userTarget.innerText.split("")[0];
     const userData = await fetchData(url, userId);
     document.getElementById("form").outerHTML = formHTML(userData);
@@ -67,11 +70,30 @@ const handleInput = ({target}) => {
     target.setAttribute("value", target.value);
   }
 
-const handleSubmit = e => {
+const handleSubmit = async e => {
     e.preventDefault();
 
     const method = e.submitter.getAttribute("data-method");
+    const id = parseInt(e.target.getAttribute("data-id"));
 
-    fetchData(url, e.target.getAttribute("data-id"), method, method === "PATCH" ? {name: e.target.querySelector("input").value} : {name: ""})
+    const result = await fetchData(
+        url, 
+        id, 
+        method, 
+        method === "PATCH" ? 
+          { name: e.target.querySelector("input").value } : 
+        method === "PUT" ? 
+          { name: e.target.querySelector("input").value, id } : 
+        method === "DELETE" ?
+          { id } :
+          { name: "" }
+      );
+      
+      
+
+    if (result.state === "DONE") {
+        const users = await fetchData(url);
+        document.getElementById("users").outerHTML = usersHTML(users);
+    }
 }
 window.addEventListener("load", main);
