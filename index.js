@@ -3,19 +3,22 @@ import { fileURLToPath } from 'url';
 import express from "express";
 import fs from "fs";
 
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = path.dirname(_filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(`/pub`, express.static(path.join(_dirname, `client`, `public`)));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.use(`/pub`, express.static(path.join(__dirname, `client`, `public`)));
 
 app.get(`/public/script.js`,(req, res) => {
-    res.sendFile(path.join(_dirname, `client`, `public`, `client`));
+    res.sendFile(path.join(__dirname, `client`, `public`, `client`));
 });
 
 app.get(`/`, (req,res) => {
-    res.sendFile(path.join(_dirname, `client`, `index.html`));
+    res.sendFile(path.join(__dirname, `client`, `index.html`));
 });
 
 app.get(`/users`, (req, res) => {
@@ -39,6 +42,31 @@ app.get(`/users/:userId`, (req, res) => {
         }
     });
 });
+app.patch('/users/:userId', (req, res) => {
+    fs.readFile(`./users.json`, 'utf8', (err, data) => {
+      if (err) throw err;
+  
+      const {users} = JSON.parse(data);
+      const userId = parseInt(req.params.userId);
+      const user = users.find(user => user.id === userId);
+  
+      if (user) {
+        user.name = req.body.name;
+  
+        fs.writeFile(`./users.json`, JSON.stringify({users}), (err) => {
+          if (err) throw err;
+        });
+        
+        res.send({state: "DONE"});
+      } else {
+        res.status(404).send({state: 'User not found'});
+      }
+    });
+  });
+
+app.get('/edit', (req,res) => {
+    res.sendFile(path.join(__dirname, 'client', 'index.html'))
+})
 
 
 
