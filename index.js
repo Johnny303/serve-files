@@ -110,6 +110,26 @@ app.patch('/users/:userId', (req, res) => {
     });
   });
 
+  app.post('/users/:userId', (req, res) => {
+    fs.readFile(dataRoute, 'utf8', (err, data) => {
+      if (err) throw err;
+  
+      const {users} = JSON.parse(data);
+      const lastUser = users[users.length - 1];
+      const newUser = {
+        name: req.body.name,
+        id: lastUser.id + 1
+      }
+      users.push(newUser);
+  
+      fs.writeFile(dataRoute, JSON.stringify({users}), (err) => {
+        if (err) throw err;
+      });
+  
+      res.send({state: "DONE"});
+    });
+  });
+
 app.get('/edit', (req,res) => {
     res.sendFile(path.join(__dirname, 'client', 'index.html'))
 })

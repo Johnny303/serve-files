@@ -2,11 +2,16 @@ console.log("the site is loaded!");
 
 const url = `http://127.0.0.1:3000/users`;
 
-const userHTML = user => `<div class="user"><span class="user.id">${user.id}</span> ${user.name}</div>`;
+const userHTML = user => `<div class="user"><span class="user.id">${user.id}</span>: ${user.name}</div>`;
 
 const usersHTML = users => `<div id="users">${users.map(user => userHTML(user)).join("")}</div>`;
 
 const fetchData = async (url, id, method = "GET", body = {name: ""}) => {
+
+    if (id && parseInt(id) === 0 && body.name === "") {
+        console.log("Empty name is not valid when creating a new user");
+        return;
+      }
   
     try {
       const response = await fetch(id !== undefined ? `${url}/${id}` : url, method === "GET" ? {method} : {method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)} );
@@ -22,19 +27,18 @@ const fetchData = async (url, id, method = "GET", body = {name: ""}) => {
   
   const buttonHTML = (text, method) => `<button type="submit" data-method="${method}">${text}</button>`;
   
-  const formHTML = (user) => `
+ const formHTML = (user, add) => `
   <form id="form" data-id="${user.id}">
     ${inputHTML(user.name)}
-    ${buttonHTML("Save", "PATCH")}
-    ${buttonHTML("Replace", "PUT")}
-    ${buttonHTML("Remove", "DELETE")}
+    ${add ? buttonHTML("Add", "POST") : buttonHTML("Save", "PATCH") + buttonHTML("Replace", "PUT") + buttonHTML("Remove", "DELETE")}
   </form>
 `;
   const main = async _ => {
       const root = document.getElementById("root");
+
       const users = await fetchData(url);
       root.insertAdjacentHTML("beforeend", usersHTML(users));
-      root.insertAdjacentHTML("beforeend", formHTML({id: 0, name: ""}));
+      root.insertAdjacentHTML("beforeend", formHTML({id: 0, name: ""}, true));
       window.addEventListener("input", handleInput);
       window.addEventListener("submit", handleSubmit);
 
@@ -71,23 +75,27 @@ const handleInput = ({target}) => {
   }
 
 const handleSubmit = async e => {
+    document.getElementById("form").outerHTML = formHTML(userData, false);
+
     e.preventDefault();
 
     const method = e.submitter.getAttribute("data-method");
     const id = parseInt(e.target.getAttribute("data-id"));
 
-    const result = await fetchData(
-        url, 
-        id, 
-        method, 
-        method === "PATCH" ? 
-          { name: e.target.querySelector("input").value } : 
-        method === "PUT" ? 
-          { name: e.target.querySelector("input").value, id } : 
-        method === "DELETE" ?
-          { id } :
-          { name: "" }
-      );
+   const result = await fetchData(
+  url, 
+  id, 
+  method, 
+  method === "PATCH" ? 
+    {name: e.target.querySelector("input").value} : 
+  method === "PUT" ? 
+    {name: e.target.querySelector("input").value, id} : 
+  method === "DELETE" ?
+    {id} : 
+  method === "POST" ? 
+    {name: e.target.querySelector("input").value, id: 0} :
+    {name: ""}
+);
       
       
 
